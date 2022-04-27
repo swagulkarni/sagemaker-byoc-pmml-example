@@ -11,7 +11,7 @@
 
 - Create Notebook Instance with the following details:
 Notebook instance name – “sagemaker-immersion-day”
-Notebook instance type – “ml.m4.4xlarge”
+Notebook instance type – “ml.m5.xlarge”
 - Go back to Notebook instance tab page and Open the notebook instance when status is InService -> Click “Open JupyterLab”. This will open a JupyterLab Interface.
 - Go to "Git" from the top menu and select "Clone a Repository" as shown below 
 <img width="312" alt="Notebook-git-clone" src="https://user-images.githubusercontent.com/46861009/165638266-d5215304-42ce-4e09-a00d-6a4eadf36ec4.png">
