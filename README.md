@@ -1,4 +1,6 @@
-# sagemaker-byoc-pmml-example
+# Serving JPMML-based Tree-based models on Amazon SageMaker
+
+This example notebook demonstrates how to bring your own java-based container and serve PMML based Models on Amazon SageMaker for Inference.
 
 ## Getting Started
 
