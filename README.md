@@ -11,9 +11,12 @@ This example notebook demonstrates how to bring your own java-based container an
 - Click Notebook -> Notebook Instances -> Create notebook Instances
 <img width="468" alt="image" src="https://user-images.githubusercontent.com/46861009/165638603-92d3f89b-03a3-45f5-995b-9b133263f998.png">
 
-- Create Notebook Instance with the following details:
+- Create Notebook Instance with the following details
+
   Notebook instance name – “sagemaker-immersion-day”
+  
   Notebook instance type – “ml.m5.xlarge”
+  
 - Go back to Notebook instance tab page and Open the notebook instance when status is InService -> Click “Open JupyterLab”. This will open a JupyterLab Interface.
 - Go to "Git" from the top menu and select "Clone a Repository" as shown below 
 <img width="312" alt="Notebook-git-clone" src="https://user-images.githubusercontent.com/46861009/165638266-d5215304-42ce-4e09-a00d-6a4eadf36ec4.png">
