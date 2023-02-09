@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,17 +26,22 @@ import org.jpmml.evaluator.ModelEvaluator;
 import org.jpmml.evaluator.ProbabilityClassificationMap;
 import org.jpmml.model.ImportFilter;
 import org.jpmml.model.JAXBUtil;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import ro.edu.aws.sgm.inference.pmml.randomforest.pojo.Model;
+
 @RestController
 public class SGMController {
 
 
   private ModelEvaluator<MiningModel> modelEvaluator;
+  private ConcurrentHashMap<String, String> concurrentHashMap;
 
 
 
@@ -59,6 +65,37 @@ public class SGMController {
   public String invoke(HttpServletRequest request) throws IOException {
     return predict(request.getReader().lines(), modelEvaluator);
   }
+
+  @RequestMapping(value = "/models", method = RequestMethod.POST)
+  public String loadModel(@RequestBody Model model) throws Exception{
+
+    String model_name = model.getModel_name();
+    String url = model.getUrl();
+    System.out.println("model_name: "+ model_name);
+    System.out.println("url: "+ url);
+
+    if(null == concurrentHashMap){
+      concurrentHashMap = new ConcurrentHashMap<String, String>();
+    }
+
+    if(concurrentHashMap.containsKey(model_name))
+      throw new Exception("Model already loaded");
+
+      concurrentHashMap.put(model_name, url) ;
+    return  "";
+  }
+
+  @RequestMapping(value = "/models", method = RequestMethod.GET)
+  public String listModels(HttpServletRequest request) throws IOException{
+    return "";
+  }
+
+  @RequestMapping(value = "/models/{model_name}", method = RequestMethod.GET)
+  public String getModel(@PathVariable String model_name){
+    return "";
+  }
+
+  
 
 
   private static String predict(Stream<String> inputData,
