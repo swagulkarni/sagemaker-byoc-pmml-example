@@ -1,8 +1,10 @@
 package ro.edu.aws.sgm.inference.pmml.randomforest.entrypoint;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,24 +37,23 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import ro.edu.aws.sgm.inference.pmml.randomforest.pojo.Model;
+import ro.edu.aws.sgm.inference.pmml.randomforest.exception.ModelNotFoundException;
 
 @RestController
 public class SGMController {
 
 
   private ModelEvaluator<MiningModel> modelEvaluator;
-  private ConcurrentHashMap<String, String> concurrentHashMap;
+  private ConcurrentHashMap<String, PMML> concurrentHashMap;
 
 
 
   @PostConstruct
   public void init() {
-    try {
-      PMML pmml = createPMMLfromFile("iris_rf.pmml");
-      modelEvaluator = new MiningModelEvaluator(pmml);
-    } catch (SAXException | JAXBException | IOException e) {
-      e.printStackTrace();
-    }
+   
+     // modelEvaluator = new MiningModelEvaluator(pmml);
+      concurrentHashMap = new ConcurrentHashMap<String, PMML>();
+   
   }
 
   @RequestMapping(value = "/ping", method = RequestMethod.GET)
@@ -71,17 +72,23 @@ public class SGMController {
 
     String model_name = model.getModel_name();
     String url = model.getUrl();
+
     System.out.println("model_name: "+ model_name);
     System.out.println("url: "+ url);
 
-    if(null == concurrentHashMap){
-      concurrentHashMap = new ConcurrentHashMap<String, String>();
+    // Throw exception when model is already present in the Map
+    if(concurrentHashMap.containsKey(model_name)){
+      throw new ModelNotFoundException("Model Name: "+ model_name + "not found");
     }
 
-    if(concurrentHashMap.containsKey(model_name))
-      throw new Exception("Model already loaded");
+    File pmmlFile = Paths.get(url).toFile();
+    PMML pmml = createPMMLfromFile(pmmlFile.toString());
 
-      concurrentHashMap.put(model_name, url) ;
+
+    // Keep the memory percentage configurable
+      Runtime.getRuntime().freeMemory();
+      Runtime.getRuntime().maxMemory();
+      concurrentHashMap.put(model_name, pmml);
     return  "";
   }
 
