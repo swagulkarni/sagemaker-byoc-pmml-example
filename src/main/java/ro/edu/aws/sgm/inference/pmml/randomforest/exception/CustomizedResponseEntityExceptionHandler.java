@@ -16,4 +16,17 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
         ErrorDetails errorDetails = new ErrorDetails(ex.getMessage(), request.getDescription(false));
         return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.NOT_FOUND);
     }
+
+    public final ResponseEntity<ErrorDetails> handleModelAlreadyPresentFoundException(ModelAlreadyPresentException ex, WebRequest request){
+
+        ErrorDetails errorDetails = new ErrorDetails(ex.getMessage(), request.getDescription(false));
+        return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.NOT_FOUND);
+    }
+
+    public final ResponseEntity<ErrorDetails> handleInsufficientMemoryException(InsufficientMemoryException ex, WebRequest request){
+
+        ErrorDetails errorDetails = new ErrorDetails(ex.getMessage(), request.getDescription(false));
+        return new ResponseEntity<ErrorDetails>(errorDetails, HttpStatus.NOT_FOUND);
+    }
+    
 }

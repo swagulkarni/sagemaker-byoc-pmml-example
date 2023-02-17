@@ -1,4 +1,4 @@
-package ro.edu.aws.sgm.inference.pmml.randomforest.app;
+/**%package ro.edu.aws.sgm.inference.pmml.randomforest.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
@@ -19,4 +19,4 @@ public class SGMLauncher {
   public static void serve() {
     SpringApplication.run(SGMLauncher.class);
   }
-}
+}%**/

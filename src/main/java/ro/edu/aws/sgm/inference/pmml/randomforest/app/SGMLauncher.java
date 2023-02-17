@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
 
-
 @SpringBootConfiguration
 @EnableAutoConfiguration
 @ComponentScan(basePackages = "ro.edu.aws.sgm.inference.pmml.randomforest.entrypoint")

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -13,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.List;
+
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
@@ -28,6 +31,8 @@ import org.jpmml.evaluator.ModelEvaluator;
 import org.jpmml.evaluator.ProbabilityClassificationMap;
 import org.jpmml.model.ImportFilter;
 import org.jpmml.model.JAXBUtil;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,6 +42,8 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import ro.edu.aws.sgm.inference.pmml.randomforest.pojo.Model;
+import ro.edu.aws.sgm.inference.pmml.randomforest.exception.InsufficientMemoryException;
+import ro.edu.aws.sgm.inference.pmml.randomforest.exception.ModelAlreadyPresentException;
 import ro.edu.aws.sgm.inference.pmml.randomforest.exception.ModelNotFoundException;
 
 @RestController
@@ -46,7 +53,8 @@ public class SGMController {
   private ModelEvaluator<MiningModel> modelEvaluator;
   private ConcurrentHashMap<String, PMML> concurrentHashMap;
 
-
+  @Value("${java.memory.threshold.percentage}")
+  private String memoryThresholdValue;
 
   @PostConstruct
   public void init() {
@@ -78,23 +86,32 @@ public class SGMController {
 
     // Throw exception when model is already present in the Map
     if(concurrentHashMap.containsKey(model_name)){
-      throw new ModelNotFoundException("Model Name: "+ model_name + "not found");
+      throw new ModelAlreadyPresentException("Model Name: " + model_name + "already loaded in memory.");
+    }
+
+    // Throw exception when enough memory is not available to load the mmodel
+    if(!isMemoryAvailable()){
+      throw new InsufficientMemoryException("Insufficient memory. Cannot load model: " + model_name);
     }
 
     File pmmlFile = Paths.get(url).toFile();
     PMML pmml = createPMMLfromFile(pmmlFile.toString());
 
-
-    // Keep the memory percentage configurable
-      Runtime.getRuntime().freeMemory();
-      Runtime.getRuntime().maxMemory();
-      concurrentHashMap.put(model_name, pmml);
+    concurrentHashMap.put(model_name, pmml);
     return  "";
   }
 
   @RequestMapping(value = "/models", method = RequestMethod.GET)
-  public String listModels(HttpServletRequest request) throws IOException{
-    return "";
+  public ResponseEntity<List<Model>> listModels(HttpServletRequest request) throws IOException{
+
+    List <Model> modelList = new ArrayList<Model>();
+
+    for (String key: concurrentHashMap.keySet()){
+
+      Model model = new Model(key, "opt/ml/models/" +key+"model");
+      modelList.add(model);
+    }
+    return ResponseEntity.ok(modelList);
   }
 
   @RequestMapping(value = "/models/{model_name}", method = RequestMethod.GET)
@@ -102,8 +119,15 @@ public class SGMController {
     return "";
   }
 
-  
+  @RequestMapping(value = "/models/{model_name}", method = RequestMethod.DELETE)
+  public String deleteModel(@PathVariable String model_name){
 
+    if(!isModelLoaded(model_name)){
+     concurrentHashMap.remove(model_name);
+    }
+
+    return "";
+  }
 
   private static String predict(Stream<String> inputData,
       ModelEvaluator<MiningModel> modelEvaluator) {
@@ -166,5 +190,27 @@ public class SGMController {
     arguments.put(new FieldName("Petal.Width"), petalWidth);
 
     return arguments;
+  }
+
+  private boolean isModelLoaded(String model_name){
+
+    if(!concurrentHashMap.containsKey(model_name)){
+      throw new ModelNotFoundException("Model name: "+ model_name + "not loaded in memory");
+    }
+    return true;
+  }
+
+  private boolean isMemoryAvailable(){
+
+    long freeMemory = Runtime.getRuntime().freeMemory();
+    long maxMemory =  Runtime.getRuntime().maxMemory();
+
+    long memoryUsage = (freeMemory/maxMemory) * 100;
+
+      if( memoryUsage >= Integer.parseInt(memoryThresholdValue))
+        return false;
+
+    return true;
+
   }
 }
