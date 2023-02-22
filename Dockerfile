@@ -1,5 +1,6 @@
 FROM anapsix/alpine-java
-LABEL maintainer "Florin Pico"
+LABEL maintainer "AWS"
+LABEL com.amazonaws.sagemaker.capabilities.multi-models=true
 RUN mkdir /work
 ADD target/sgm-java-example-0.0.1-SNAPSHOT.jar /work/app.jar
 RUN sh -c 'touch /work/app.jar'
