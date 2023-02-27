@@ -63,17 +63,20 @@ public class SGMController {
 
 
   @PostMapping(value = "/models/{model_name}/invoke")
-  public String invoke(HttpServletRequest request, 
+  public ResponseEntity<String> invoke(HttpServletRequest request, 
     @RequestHeader(value = "X-Amzn-SageMaker-Target-Model") String targetModel,
     @PathVariable String model_name, @RequestBody InputData inputData) throws IOException {
     
+    String predictions = null;
     if(isModelLoaded(model_name)){
 
+      System.out.println("Found model in memory.");
       List <Features> data = inputData.getFeatureList();
-      jpmmlInferenceHandlerImpl.predict(data, concurrentHashMap.get(model_name));
+      predictions = jpmmlInferenceHandlerImpl.predict(data, concurrentHashMap.get(model_name));
+      
     }
  
-    return "";
+    return new ResponseEntity <String>(predictions, HttpStatus.OK);
     
   }
 
@@ -120,8 +123,15 @@ public class SGMController {
 
 
   @GetMapping("/models/{model_name}")
-  public String getModel(@PathVariable String model_name){
-    return "";
+  public ResponseEntity<Model> getModel(@PathVariable String model_name){
+
+    Model model = null;
+    if(isModelLoaded(model_name)){
+
+       model = new Model(model_name, "opt/ml/models/" +model_name+"/model");
+
+    }
+    return ResponseEntity.ok(model);
   }
 
 

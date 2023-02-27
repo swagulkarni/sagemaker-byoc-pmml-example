@@ -41,11 +41,13 @@ public class JPMMLInferenceHandlerImpl implements InferenceHandlerInf {
     }
     
 
-    private static String predict(Stream<String> inputData,
+private static String predict(Stream<String> inputData,
       ModelEvaluator<MiningModel> modelEvaluator) {
 
 
     String returns = inputData.map(dataLine -> {
+
+      System.out.println("Predicting for input data: " + dataLine);
       Map<FieldName, FieldValue> arguments = readArgumentsFromLine(dataLine, modelEvaluator);
       modelEvaluator.verify();
       Map<FieldName, ?> results = modelEvaluator.evaluate(arguments);
@@ -56,6 +58,7 @@ public class JPMMLInferenceHandlerImpl implements InferenceHandlerInf {
       return  ( nodeMap != null && nodeMap.getResult() !=  null) ? nodeMap.getResult().toString() : "NA for input->"+dataLine;
     }).collect(Collectors.joining(System.lineSeparator()));
 
+    System.out.println("Prediction results: " + returns);
     return returns;
 
   }
