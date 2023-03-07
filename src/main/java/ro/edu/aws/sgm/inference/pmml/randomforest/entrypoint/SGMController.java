@@ -21,7 +21,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -40,7 +48,7 @@ public class SGMController {
 
 
   //private ModelEvaluator<MiningModel> modelEvaluator;
-  private ConcurrentHashMap<String, PMML> concurrentHashMap;
+  private ConcurrentHashMap<String, File> concurrentHashMap;
 
   @Autowired
   @Qualifier("jpmmlInferenceImpl")
@@ -52,7 +60,7 @@ public class SGMController {
   @PostConstruct
   public void init() {
    
-      concurrentHashMap = new ConcurrentHashMap<String, PMML>();
+      concurrentHashMap = new ConcurrentHashMap<String, File>();
    
   }
 
@@ -100,10 +108,11 @@ public class SGMController {
       throw new InsufficientMemoryException("Insufficient memory. Cannot load model: " + model_name);
     }
 
-    File pmmlFile = Paths.get(url).toFile();
-    PMML pmml = createPMMLfromFile(pmmlFile);
 
-    concurrentHashMap.put(model_name, pmml);
+    File modelFile = Paths.get(url).toFile();
+    //PMML pmml = createPMMLfromFile(modelFile);
+
+    concurrentHashMap.put(model_name, modelFile);
     return  new ResponseEntity<>("Model: "+ model_name + " loaded in memory", HttpStatus.OK);
   }
 
@@ -146,21 +155,6 @@ public class SGMController {
   }
 
 
-  private static PMML createPMMLfromFile(File pmmlFile)
-      throws SAXException, IOException, JAXBException{
-
-
-     // File pmmlFile = new File(SGMController.class.getResource(fileName).getPath());  
-      String pmmlString = new Scanner(pmmlFile).useDelimiter("\\Z").next();
-
-      InputStream is = new ByteArrayInputStream(pmmlString.getBytes());
-
-      InputSource source = new InputSource(is);
-      SAXSource transformedSource = ImportFilter.apply(source);
-
-      return JAXBUtil.unmarshalPMML(transformedSource);
-
-  }
 
   private boolean isModelLoaded(String model_name){
 
@@ -183,4 +177,8 @@ public class SGMController {
     return true;
 
   }
+
+ 
 }
+
+
