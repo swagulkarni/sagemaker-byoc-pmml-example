@@ -1,17 +1,13 @@
 package ro.edu.aws.sgm.inference.pmml.randomforest.handler;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,9 +15,7 @@ import java.util.stream.Stream;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.sax.SAXSource;
 
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+
 import org.dmg.pmml.FieldName;
 import org.dmg.pmml.MiningModel;
 import org.dmg.pmml.PMML;
@@ -43,7 +37,6 @@ public class JPMMLInferenceHandlerImpl implements InferenceHandlerInf {
     public String predict(List <Features> data, Object model){
 
         File modelFile = (File)model;
-       // decompressTarGzipFile(modelFile.toPath());
 
         PMML pmmlFile = null;
         try {
@@ -116,42 +109,7 @@ private static String predict(Stream<String> inputData,
     return arguments;
   }
 
-  private void decompressTarGzipFile( Path source){
-    
-    InputStream fi = null;
-    BufferedInputStream bi = null;
-    GzipCompressorInputStream gzi = null;
-    TarArchiveInputStream ti = null;
-    try{
-
-      fi = Files.newInputStream(source);
-      bi = new BufferedInputStream(fi);
-      gzi = new GzipCompressorInputStream(bi);
-      ti = new TarArchiveInputStream(gzi);
-
-      ArchiveEntry entry = ti.getNextTarEntry();
-      
-
-      Files.copy(ti, source, StandardCopyOption.REPLACE_EXISTING);
-
-    }catch(IOException ex){
-      ex.printStackTrace();
-      
-    }finally{
-      
-      try{
-        if(Stream.of(ti,gzi,bi,fi).allMatch(Objects::nonNull)){
-          ti.close();
-          gzi.close();
-          bi.close();
-          fi.close();
-        }
-        }catch(IOException ex){
-
-        }
-
-    }
-  }
+ 
 
 private static PMML createPMMLfromFile(File pmmlFile)
   throws SAXException, IOException, JAXBException{

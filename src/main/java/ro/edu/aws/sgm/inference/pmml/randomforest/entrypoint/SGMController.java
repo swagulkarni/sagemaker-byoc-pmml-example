@@ -1,21 +1,12 @@
 package ro.edu.aws.sgm.inference.pmml.randomforest.entrypoint;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.xml.bind.JAXBException;
-import javax.xml.transform.sax.SAXSource;
-
-import org.dmg.pmml.PMML;
-import org.jpmml.model.ImportFilter;
-import org.jpmml.model.JAXBUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,8 +21,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,8 +35,6 @@ import ro.edu.aws.sgm.inference.pmml.randomforest.pojo.Model;
 @RestController
 public class SGMController {
 
-
-  //private ModelEvaluator<MiningModel> modelEvaluator;
   private ConcurrentHashMap<String, File> concurrentHashMap;
 
   @Autowired
@@ -66,6 +53,8 @@ public class SGMController {
 
   @RequestMapping(value = "/ping", method = RequestMethod.GET)
   public String ping() {
+
+    System.out.println("[Ping] Pinging the container.");
     return "";
   }
 
@@ -75,10 +64,12 @@ public class SGMController {
     @RequestHeader(value = "X-Amzn-SageMaker-Target-Model") String targetModel,
     @PathVariable String model_name, @RequestBody InputData inputData) throws IOException {
     
+    System.out.println("[Invoke Model] Target model header value: "+ targetModel);  
     String predictions = null;
-    if(isModelLoaded(model_name)){
 
-      System.out.println("Found model in memory.");
+    if(isModelLoaded(model_name)){
+      
+      System.out.println("[Invoke Model] Found model " +model_name+" in memory.");
       List <Features> data = inputData.getFeatureList();
       predictions = jpmmlInferenceHandlerImpl.predict(data, concurrentHashMap.get(model_name));
       
@@ -95,8 +86,8 @@ public class SGMController {
     String model_name = model.getModel_name();
     String url = model.getUrl();
 
-    System.out.println("model_name: "+ model_name);
-    System.out.println("url: "+ url);
+    System.out.println("[Load Model] model_name: "+ model_name);
+    System.out.println("[Load Model] url: "+ url);
 
     // Throw exception when model is already present in the Map
     if(concurrentHashMap.containsKey(model_name)){
@@ -108,11 +99,12 @@ public class SGMController {
       throw new InsufficientMemoryException("Insufficient memory. Cannot load model: " + model_name);
     }
 
-
     File modelFile = Paths.get(url).toFile();
-    //PMML pmml = createPMMLfromFile(modelFile);
 
     concurrentHashMap.put(model_name, modelFile);
+    System.out.println("[Load Model] model_name: "+ model_name + " loaded in memory.");
+
+  
     return  new ResponseEntity<>("Model: "+ model_name + " loaded in memory", HttpStatus.OK);
   }
 
@@ -127,6 +119,8 @@ public class SGMController {
       Model model = new Model(key, "opt/ml/models/" +key+"/model");
       modelList.add(model);
     }
+
+    System.out.println("[List Models] Returning a list of "+modelList.size()+" models.");
     return ResponseEntity.ok(modelList);
   }
 
@@ -137,7 +131,8 @@ public class SGMController {
     Model model = null;
     if(isModelLoaded(model_name)){
 
-       model = new Model(model_name, "opt/ml/models/" +model_name+"/model");
+      model = new Model(model_name, "opt/ml/models/" +model_name+"/model");
+      System.out.println("[Get Model] Returning model name" +model.getModel_name()+" and Model URL " +model.getUrl());
 
     }
     return ResponseEntity.ok(model);
@@ -149,6 +144,7 @@ public class SGMController {
 
     if(isModelLoaded(model_name)){
      concurrentHashMap.remove(model_name);
+     System.out.println("[Delete Model] Deleting model: "+model_name+" from the memory");
     }
 
     return new ResponseEntity<String>("Model: " + model_name + " removed from the memory.", HttpStatus.OK);
@@ -169,9 +165,12 @@ public class SGMController {
     long freeMemory = Runtime.getRuntime().freeMemory();
     long maxMemory =  Runtime.getRuntime().maxMemory();
 
-    long memoryUsage = (freeMemory/maxMemory) * 100;
+    long availableMemory = (freeMemory/maxMemory) * 100;
 
-      if( memoryUsage >= Integer.parseInt(memoryThresholdValue))
+    System.out.println("Current heap memory usage: "+ availableMemory+"%");
+    System.out.println("Memory threshold value: "+memoryThresholdValue+"%");
+
+      if( availableMemory >= Integer.parseInt(memoryThresholdValue))
         return false;
 
     return true;
